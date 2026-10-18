@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}My Encounters{% endblock %}
+
+{% block header %}
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">My Encounters</h1>
+    <a class="btn btn-primary" href="{{ url_for('encounters.create') }}">+ New Encounter</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+  {% if encounters %}
+    <div class="row g-4">
+      {% for encounter in encounters %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h2 class="h5 card-title">{{ encounter['name'] }}</h2>
+              {% if encounter['description'] %}
+                <p class="card-text">{{ encounter['description'] }}</p>
+              {% endif %}
+              <span class="badge text-bg-secondary">
+                {{ encounter['combatant_count'] }} combatant{{ '' if encounter['combatant_count'] == 1 else 's' }}
+              </span>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-body-secondary">Created {{ encounter['created'].strftime('%Y-%m-%d') }}</small>
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('encounters.detail', id=encounter['id']) }}">Open</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center p-5 bg-body-tertiary rounded-3">
+      <p class="fs-5 mb-3">You don't have any encounters yet.</p>
+      <a class="btn btn-primary" href="{{ url_for('encounters.create') }}">Create Your First Encounter</a>
+    </div>
+  {% endif %}
+{% endblock %}

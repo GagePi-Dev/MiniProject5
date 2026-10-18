@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% set type_badges = {'PC': 'text-bg-primary', 'Monster': 'text-bg-danger', 'NPC': 'text-bg-secondary'} %}
+
+{% block title %}{{ encounter['name'] }}{% endblock %}
+
+{% block header %}
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+      <h1 class="mb-1">{{ encounter['name'] }}</h1>
+      {% if encounter['description'] %}
+        <p class="text-body-secondary mb-0">{{ encounter['description'] }}</p>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCombatantModal">
+        + Add Combatant
+      </button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('encounters.update', id=encounter['id']) }}">Edit Encounter</a>
+    </div>
+  </div>
+{% endblock %}
+
+{% block content %}
+  {% if combatants %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Init</th>
+            <th scope="col">Name</th>
+            <th scope="col">Type</th>
+            <th scope="col" style="min-width: 10rem;">HP</th>
+            <th scope="col">AC</th>
+            <th scope="col">Notes</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in combatants %}
+            {% set hp_pct = (c['current_hp'] / c['max_hp'] * 100) | round | int %}
+            <tr class="{{ 'table-secondary text-body-secondary' if c['current_hp'] == 0 }}">
+              <td class="fw-bold fs-5">{{ c['initiative'] }}</td>
+              <td>
+                {{ c['name'] }}
+                {% if c['current_hp'] == 0 %}<span class="badge text-bg-dark ms-1">Down</span>{% endif %}
+              </td>
+              <td><span class="badge {{ type_badges[c['type']] }}">{{ c['type'] }}</span></td>
+              <td>
+                <div class="small">{{ c['current_hp'] }} / {{ c['max_hp'] }}</div>
+                <div class="progress" role="progressbar" aria-label="{{ c['name'] }} HP"
+                     aria-valuenow="{{ c['current_hp'] }}" aria-valuemin="0" aria-valuemax="{{ c['max_hp'] }}"
+                     style="height: 0.5rem;">
+                  <div class="progress-bar {{ 'bg-success' if hp_pct > 50 else 'bg-warning' if hp_pct > 0 else 'bg-danger' }}"
+                       style="width: {{ hp_pct }}%"></div>
+                </div>
+              </td>
+              <td>{{ c['armor_class'] if c['armor_class'] is not none else '—' }}</td>
+              <td class="small">{{ c['notes'] or '' }}</td>
+              <td class="text-end text-nowrap">
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal" data-bs-target="#hpModal"
+                        data-name="{{ c['name'] }}"
+                        data-hp="{{ c['current_hp'] }} / {{ c['max_hp'] }}"
+                        data-action="{{ url_for('encounters.adjust_hp', id=encounter['id'], cid=c['id']) }}">
+                  HP
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="modal" data-bs-target="#editCombatantModal"
+                        data-action="{{ url_for('encounters.update_combatant', id=encounter['id'], cid=c['id']) }}"
+                        data-name="{{ c['name'] }}"
+                        data-type="{{ c['type'] }}"
+                        data-initiative="{{ c['initiative'] }}"
+                        data-max-hp="{{ c['max_hp'] }}"
+                        data-current-hp="{{ c['current_hp'] }}"
+                        data-ac="{{ c['armor_class'] if c['armor_class'] is not none else '' }}"
+                        data-notes="{{ c['notes'] or '' }}">
+                  Edit
+                </button>
+                <form class="d-inline" method="post"
+                      action="{{ url_for('encounters.delete_combatant', id=encounter['id'], cid=c['id']) }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center p-5 bg-body-tertiary rounded-3">
+      <p class="fs-5 mb-3">No combatants yet. Add your players and monsters to start the fight.</p>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCombatantModal">
+        + Add Combatant
+      </button>
+    </div>
+  {% endif %}
+
+  <a class="btn btn-link px-0 mt-3" href="{{ url_for('encounters.index') }}">&larr; Back to My Encounters</a>
+
+  <!-- Add Combatant modal -->
+  <div class="modal fade" id="addCombatantModal" tabindex="-1" aria-labelledby="addCombatantLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="{{ url_for('encounters.add_combatant', id=encounter['id']) }}">
+          <div class="modal-header">
+            <h2 class="modal-title h5" id="addCombatantLabel">Add Combatant</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-8">
+                <label for="cName" class="form-label">Name</label>
+                <input type="text" class="form-control" name="name" id="cName" required>
+              </div>
+              <div class="col-4">
+                <label for="cType" class="form-label">Type</label>
+                <select class="form-select" name="type" id="cType">
+                  {% for t in combatant_types %}
+                    <option value="{{ t }}">{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-4">
+                <label for="cInit" class="form-label">Initiative</label>
+                <input type="number" class="form-control" name="initiative" id="cInit" required>
+              </div>
+              <div class="col-4">
+                <label for="cHp" class="form-label">Max HP</label>
+                <input type="number" class="form-control" name="max_hp" id="cHp" min="1" required>
+              </div>
+              <div class="col-4">
+                <label for="cAc" class="form-label">AC</label>
+                <input type="number" class="form-control" name="armor_class" id="cAc" min="0">
+              </div>
+              <div class="col-12">
+                <label for="cNotes" class="form-label">Notes <span class="text-body-secondary">(optional)</span></label>
+                <textarea class="form-control" name="notes" id="cNotes" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Combatant modal (shared by every row) -->
+  <div class="modal fade" id="editCombatantModal" tabindex="-1" aria-labelledby="editCombatantLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" id="editForm">
+          <div class="modal-header">
+            <h2 class="modal-title h5" id="editCombatantLabel">Edit Combatant</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-8">
+                <label for="eName" class="form-label">Name</label>
+                <input type="text" class="form-control" name="name" id="eName" required>
+              </div>
+              <div class="col-4">
+                <label for="eType" class="form-label">Type</label>
+                <select class="form-select" name="type" id="eType">
+                  {% for t in combatant_types %}
+                    <option value="{{ t }}">{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6 col-sm-3">
+                <label for="eInit" class="form-label">Initiative</label>
+                <input type="number" class="form-control" name="initiative" id="eInit" required>
+              </div>
+              <div class="col-6 col-sm-3">
+                <label for="eCurHp" class="form-label">Current HP</label>
+                <input type="number" class="form-control" name="current_hp" id="eCurHp" min="0" required>
+              </div>
+              <div class="col-6 col-sm-3">
+                <label for="eHp" class="form-label">Max HP</label>
+                <input type="number" class="form-control" name="max_hp" id="eHp" min="1" required>
+              </div>
+              <div class="col-6 col-sm-3">
+                <label for="eAc" class="form-label">AC</label>
+                <input type="number" class="form-control" name="armor_class" id="eAc" min="0">
+              </div>
+              <div class="col-12">
+                <label for="eNotes" class="form-label">Notes <span class="text-body-secondary">(optional)</span></label>
+                <textarea class="form-control" name="notes" id="eNotes" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adjust HP modal (shared by every row) -->
+  <div class="modal fade" id="hpModal" tabindex="-1" aria-labelledby="hpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <form method="post" id="hpForm">
+          <div class="modal-header">
+            <h2 class="modal-title h5" id="hpModalLabel">Adjust HP</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-2"><strong id="hpName"></strong> &mdash; HP <span id="hpCurrent"></span></p>
+            <label for="hpAmount" class="form-label">Amount</label>
+            <input type="number" class="form-control" name="amount" id="hpAmount" min="0" required>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" name="action" value="damage" class="btn btn-danger">Damage</button>
+            <button type="submit" name="action" value="heal" class="btn btn-success">Heal</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Fill the shared HP modal with the clicked combatant's info
+    document.getElementById('hpModal').addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      document.getElementById('hpForm').action = button.dataset.action;
+      document.getElementById('hpName').textContent = button.dataset.name;
+      document.getElementById('hpCurrent').textContent = button.dataset.hp;
+      document.getElementById('hpAmount').value = '';
+    });
+    document.getElementById('hpModal').addEventListener('shown.bs.modal', function () {
+      document.getElementById('hpAmount').focus();
+    });
+
+    // Fill the shared Edit modal with the clicked combatant's current values
+    document.getElementById('editCombatantModal').addEventListener('show.bs.modal', function (event) {
+      const d = event.relatedTarget.dataset;
+      document.getElementById('editForm').action = d.action;
+      document.getElementById('eName').value = d.name;
+      document.getElementById('eType').value = d.type;
+      document.getElementById('eInit').value = d.initiative;
+      document.getElementById('eCurHp').value = d.currentHp;
+      document.getElementById('eHp').value = d.maxHp;
+      document.getElementById('eAc').value = d.ac;
+      document.getElementById('eNotes').value = d.notes;
+    });
+  </script>
+{% endblock %}
