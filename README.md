@@ -74,8 +74,8 @@ These steps assume Python 3 is installed. Run all commands from the project's ro
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/GagePi-Dev/MiniProject5.git
-cd MiniProject5
+git clone https://github.com/GagePi-Dev/miniproject5GageGiffin.git
+cd miniproject5GageGiffin
 ```
 
 **2. Create and activate a virtual environment**
