@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <div class="p-5 mb-4 bg-body-tertiary rounded-3">
+    <h1 class="display-5 fw-bold">Roll for Initiative!</h1>
+    <p class="col-md-8 fs-5">
+      Initiative Tracker helps Dungeon Masters run combat. Build an encounter, add your
+      players and monsters, and keep everyone in turn order with their HP at a glance.
+    </p>
+    {% if g.user %}
+      <a class="btn btn-primary btn-lg" href="{{ url_for('encounters.index') }}">Go to My Encounters</a>
+    {% else %}
+      <a class="btn btn-primary btn-lg me-2" href="{{ url_for('auth.register') }}">Get Started</a>
+      <a class="btn btn-outline-secondary btn-lg" href="{{ url_for('auth.login') }}">Log In</a>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h5 card-title">Build Encounters</h2>
+          <p class="card-text">Save encounters like "Goblin Ambush" and come back to them any time.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h5 card-title">Track Turn Order</h2>
+          <p class="card-text">Combatants are sorted by initiative so you always know who goes next.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h5 card-title">Manage HP</h2>
+          <p class="card-text">Apply damage and healing on the fly without leaving the tracker.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

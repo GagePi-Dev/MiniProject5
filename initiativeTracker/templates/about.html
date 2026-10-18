@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}About{% endblock %}
+
+{% block header %}
+  <h1>About Initiative Tracker</h1>
+{% endblock %}
+
+{% block content %}
+  <p class="lead">
+    Initiative Tracker is a small tool for running combat in Dungeons &amp; Dragons and other
+    tabletop games. It keeps your combatants in turn order and tracks their hit points so you
+    can focus on the story.
+  </p>
+
+  <h2 class="h4 mt-4">How to Use</h2>
+  <ol class="list-group list-group-numbered mb-4">
+    <li class="list-group-item">
+      <strong>Create an account.</strong> Register and log in so your encounters are saved to you.
+    </li>
+    <li class="list-group-item">
+      <strong>Create an encounter.</strong> Give it a name and an optional description, like
+      "Goblin Ambush at the Bridge."
+    </li>
+    <li class="list-group-item">
+      <strong>Add combatants.</strong> Open the encounter and add each player, monster, or NPC
+      with their initiative roll, HP, and armor class.
+    </li>
+    <li class="list-group-item">
+      <strong>Run the fight.</strong> Combatants are listed from highest to lowest initiative.
+      Use the HP button to apply damage or healing as the battle goes on.
+    </li>
+  </ol>
+
+  <h2 class="h4">Combatant Types</h2>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+        <th scope="col">Meaning</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge text-bg-primary">PC</span></td>
+        <td>Player Character, controlled by one of your players.</td>
+      </tr>
+      <tr>
+        <td><span class="badge text-bg-danger">Monster</span></td>
+        <td>An enemy creature controlled by the DM.</td>
+      </tr>
+      <tr>
+        <td><span class="badge text-bg-secondary">NPC</span></td>
+        <td>Non-Player Character, such as an ally, bystander, or neutral party.</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}
