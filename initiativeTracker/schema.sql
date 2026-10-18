@@ -23,9 +23,9 @@ CREATE TABLE combatant (
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('PC', 'Monster', 'NPC')),
   initiative INTEGER NOT NULL,
+  initiative_modifier INTEGER NOT NULL DEFAULT 0,
   max_hp INTEGER NOT NULL,
   current_hp INTEGER NOT NULL,
   armor_class INTEGER,
-  notes TEXT,
   FOREIGN KEY (encounter_id) REFERENCES encounter (id) ON DELETE CASCADE
 );

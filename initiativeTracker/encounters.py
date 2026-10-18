@@ -2,6 +2,8 @@
 # Gage Giffin
 # Mini Project 5
 
+import random
+
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
 )
@@ -133,15 +135,16 @@ def read_combatant_form(form):
     values = {
         'name': form['name'].strip(),
         'type': form['type'],
-        'notes': form['notes'].strip(),
     }
 
     try:
-        values['initiative'] = int(form['initiative'])
+        # initiative is optional since it can be rolled later
+        values['initiative'] = int(form['initiative'] or 0)
+        values['initiative_modifier'] = int(form['initiative_modifier'] or 0)
         values['max_hp'] = int(form['max_hp'])
         values['armor_class'] = int(form['armor_class']) if form['armor_class'] else None
     except ValueError:
-        return values, 'Initiative, HP, and AC must be whole numbers.'
+        return values, 'Initiative, modifier, HP, and AC must be whole numbers.'
 
     if not values['name']:
         return values, 'Name is required.'
@@ -163,10 +166,10 @@ def add_combatant(id):
         db = get_db()
         db.execute(
             'INSERT INTO combatant'
-            ' (encounter_id, name, type, initiative, max_hp, current_hp, armor_class, notes)'
+            ' (encounter_id, name, type, initiative, initiative_modifier, max_hp, current_hp, armor_class)'
             ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            (id, values['name'], values['type'], values['initiative'], values['max_hp'],
-             values['max_hp'], values['armor_class'], values['notes'])
+            (id, values['name'], values['type'], values['initiative'], values['initiative_modifier'],
+             values['max_hp'], values['max_hp'], values['armor_class'])
         )
         db.commit()
     else:
@@ -194,16 +197,34 @@ def update_combatant(id, cid):
     if error is None:
         db = get_db()
         db.execute(
-            'UPDATE combatant SET name = ?, type = ?, initiative = ?, max_hp = ?,'
-            ' current_hp = ?, armor_class = ?, notes = ?'
+            'UPDATE combatant SET name = ?, type = ?, initiative = ?, initiative_modifier = ?,'
+            ' max_hp = ?, current_hp = ?, armor_class = ?'
             ' WHERE id = ?',
-            (values['name'], values['type'], values['initiative'], values['max_hp'],
-             current_hp, values['armor_class'], values['notes'], cid)
+            (values['name'], values['type'], values['initiative'], values['initiative_modifier'],
+             values['max_hp'], current_hp, values['armor_class'], cid)
         )
         db.commit()
     else:
         flash(error)
 
+    return redirect(url_for('encounters.detail', id=id))
+
+
+@bp.route('/<int:id>/roll', methods=('POST',))
+@login_required
+def roll_initiative(id):
+    get_encounter(id)
+    db = get_db()
+    combatants = db.execute(
+        'SELECT id, initiative_modifier FROM combatant WHERE encounter_id = ?', (id,)
+    ).fetchall()
+
+    for c in combatants:
+        roll = random.randint(1, 20) + c['initiative_modifier']
+        db.execute('UPDATE combatant SET initiative = ? WHERE id = ?', (roll, c['id']))
+    db.commit()
+
+    flash('Rolled initiative for all combatants.')
     return redirect(url_for('encounters.detail', id=id))
 
 
