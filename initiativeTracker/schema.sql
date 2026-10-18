@@ -1,0 +1,31 @@
+DROP TABLE IF EXISTS combatant;
+DROP TABLE IF EXISTS encounter;
+DROP TABLE IF EXISTS user;
+
+CREATE TABLE user (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL
+);
+
+CREATE TABLE encounter (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  name TEXT NOT NULL,
+  description TEXT,
+  FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE
+);
+
+CREATE TABLE combatant (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  encounter_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('PC', 'Monster', 'NPC')),
+  initiative INTEGER NOT NULL,
+  max_hp INTEGER NOT NULL,
+  current_hp INTEGER NOT NULL,
+  armor_class INTEGER,
+  notes TEXT,
+  FOREIGN KEY (encounter_id) REFERENCES encounter (id) ON DELETE CASCADE
+);
