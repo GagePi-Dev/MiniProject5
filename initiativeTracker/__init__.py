@@ -3,6 +3,7 @@
 # Mini Project 5
 
 import os
+import secrets
 
 from flask import Flask
 
@@ -11,8 +12,12 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev',
+        # random fallback so the app never runs with a guessable key;
+        # set a permanent SECRET_KEY in instance/config.py (see README)
+        SECRET_KEY=secrets.token_hex(32),
         DATABASE=os.path.join(app.instance_path, 'initiativeTracker.sqlite'),
+        # don't send the login cookie on cross-site POSTs (basic CSRF protection)
+        SESSION_COOKIE_SAMESITE='Lax',
     )
 
     if test_config is None:

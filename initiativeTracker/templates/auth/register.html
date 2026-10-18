@@ -12,12 +12,13 @@
             <div class="mb-3">
               <label for="username" class="form-label">Username</label>
               <input type="text" class="form-control" name="username" id="username"
-                     value="{{ request.form['username'] }}" autocomplete="username" required>
+                     value="{{ request.form['username'] }}" autocomplete="username" maxlength="30" required>
             </div>
             <div class="mb-3">
               <label for="password" class="form-label">Password</label>
               <input type="password" class="form-control" name="password" id="password"
-                     autocomplete="new-password" required>
+                     autocomplete="new-password" minlength="8" required>
+              <div class="form-text">At least 8 characters.</div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Register</button>
           </form>

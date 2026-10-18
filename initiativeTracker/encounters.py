@@ -16,6 +16,19 @@ bp = Blueprint('encounters', __name__, url_prefix='/encounters')
 
 COMBATANT_TYPES = ('PC', 'Monster', 'NPC')
 
+MAX_ENCOUNTER_NAME = 100
+MAX_DESCRIPTION = 1000
+MAX_COMBATANT_NAME = 50
+MAX_HP_AMOUNT = 9999
+
+# (label, min, max) for each number field on the combatant form
+COMBATANT_NUMBER_LIMITS = {
+    'initiative': ('Initiative', -20, 50),
+    'initiative_modifier': ('Init modifier', -20, 20),
+    'max_hp': ('Max HP', 1, MAX_HP_AMOUNT),
+    'armor_class': ('AC', 0, 50),
+}
+
 
 @bp.route('/')
 @login_required
@@ -58,15 +71,30 @@ def get_combatant(encounter_id, id):
     return combatant
 
 
+def read_encounter_form(form):
+    """Validate the create/edit encounter form. Returns (name, description, error)."""
+    name = form['name'].strip()
+    description = form['description'].strip()
+    error = None
+
+    if not name:
+        error = 'Name is required.'
+    elif len(name) > MAX_ENCOUNTER_NAME:
+        error = f'Name must be {MAX_ENCOUNTER_NAME} characters or fewer.'
+    elif len(description) > MAX_DESCRIPTION:
+        error = f'Description must be {MAX_DESCRIPTION} characters or fewer.'
+
+    return name, description, error
+
+
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
     if request.method == 'POST':
-        name = request.form['name'].strip()
-        description = request.form['description'].strip()
+        name, description, error = read_encounter_form(request.form)
 
-        if not name:
-            flash('Name is required.')
+        if error is not None:
+            flash(error)
         else:
             db = get_db()
             cursor = db.execute(
@@ -102,11 +130,10 @@ def update(id):
     encounter = get_encounter(id)
 
     if request.method == 'POST':
-        name = request.form['name'].strip()
-        description = request.form['description'].strip()
+        name, description, error = read_encounter_form(request.form)
 
-        if not name:
-            flash('Name is required.')
+        if error is not None:
+            flash(error)
         else:
             db = get_db()
             db.execute(
@@ -148,10 +175,14 @@ def read_combatant_form(form):
 
     if not values['name']:
         return values, 'Name is required.'
+    if len(values['name']) > MAX_COMBATANT_NAME:
+        return values, f'Name must be {MAX_COMBATANT_NAME} characters or fewer.'
     if values['type'] not in COMBATANT_TYPES:
         return values, 'Invalid combatant type.'
-    if values['max_hp'] < 1:
-        return values, 'Max HP must be at least 1.'
+
+    for field, (label, low, high) in COMBATANT_NUMBER_LIMITS.items():
+        if values[field] is not None and not low <= values[field] <= high:
+            return values, f'{label} must be between {low} and {high}.'
 
     return values, None
 
@@ -239,8 +270,8 @@ def adjust_hp(id, cid):
     except ValueError:
         amount = -1
 
-    if amount < 0:
-        flash('HP amount must be a positive whole number.')
+    if not 0 <= amount <= MAX_HP_AMOUNT:
+        flash(f'HP amount must be a whole number from 0 to {MAX_HP_AMOUNT}.')
         return redirect(url_for('encounters.detail', id=id))
 
     if request.form['action'] == 'heal':

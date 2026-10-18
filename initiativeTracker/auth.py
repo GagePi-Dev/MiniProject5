@@ -13,19 +13,24 @@ from initiativeTracker.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
+MAX_USERNAME_LENGTH = 30
+MIN_PASSWORD_LENGTH = 8
+
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
         db = get_db()
         error = None
 
         if not username:
             error = 'Username is required.'
-        elif not password:
-            error = 'Password is required.'
+        elif len(username) > MAX_USERNAME_LENGTH:
+            error = f'Username must be {MAX_USERNAME_LENGTH} characters or fewer.'
+        elif len(password) < MIN_PASSWORD_LENGTH:
+            error = f'Password must be at least {MIN_PASSWORD_LENGTH} characters.'
 
         if error is None:
             try:
@@ -48,7 +53,7 @@ def register():
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
         db = get_db()
         error = None
@@ -56,10 +61,9 @@ def login():
             'SELECT * FROM user WHERE username = ?', (username,)
         ).fetchone()
 
-        if user is None:
-            error = 'Incorrect username.'
-        elif not check_password_hash(user['password'], password):
-            error = 'Incorrect password.'
+        # one message for both cases so it doesn't reveal which usernames exist
+        if user is None or not check_password_hash(user['password'], password):
+            error = 'Incorrect username or password.'
 
         if error is None:
             session.clear()
@@ -83,7 +87,7 @@ def load_logged_in_user():
         ).fetchone()
 
 
-@bp.route('/logout')
+@bp.route('/logout', methods=('POST',))
 def logout():
     session.clear()
     return redirect(url_for('main.home'))
