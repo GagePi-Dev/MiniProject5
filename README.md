@@ -155,10 +155,10 @@ Then open <http://127.0.0.1:5000/> in your browser, register an account, and cre
 - Built the Flask app based on the Flask tutorial: the app factory, database and schema, the main, auth, and encounters blueprints, and all templates with Bootstrap modals. Also added the features I requested later (combatant editing, inline HP controls, initiative modifiers, and Roll Initiative) and tested each step.
 - Performed a security review and implemented the fixes I approved: a random secret key, `SameSite` cookies, a single login error message, POST-only logout, Bootstrap integrity hashes, and input length and range limits. Also wrote the full README, including setup instructions and limitations.
 
-### What I Wrote Myself
+### What I Did Myself
 
-- 
+- Tested the app section by section, reviewing each step in the browser before it was committed.
 
 ### What I Changed In AI Code
 
-- 
+- I did not change any code manually. Instead, I explained the edits and changes I wanted to Claude to develop, including the inline HP management controls and the initiative roller function.
